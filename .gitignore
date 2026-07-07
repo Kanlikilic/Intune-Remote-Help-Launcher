@@ -1,0 +1,15 @@
+# PowerShell temporary files
+*.ps1~
+*.psm1~
+*.ps1xml
+
+# Logs and local runtime files
+*.log
+*.jsonl
+session-history.jsonl
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
