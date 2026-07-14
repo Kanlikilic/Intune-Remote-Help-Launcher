@@ -1,4 +1,4 @@
-# Intune Remote Help Launcher - v0.1 SDK test build
+﻿# Intune Remote Help Launcher - v0.12 SDK test build
 # UI-first design with basic Microsoft Graph backend.
 # Windows PowerShell 5.1 compatible. Uses delegated device code authentication.
 
@@ -20,7 +20,7 @@ Add-Type -AssemblyName WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Intune Remote Help Launcher"
+        Title="Intune Remote Help Launcher v0.15"
         Width="1280" Height="780"
         MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
@@ -119,7 +119,7 @@ Add-Type -AssemblyName WindowsBase
                     </Border>
                     <TextBlock Text="Intune Remote" Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,26,0,0"/>
                     <TextBlock Text="Help Launcher" Foreground="#4B8BFF" FontSize="24" FontWeight="Bold"/>
-                    <TextBlock Text="One search. One action. Less portal friction." Foreground="#AFC0D4" FontSize="13" TextWrapping="Wrap" Margin="0,16,0,0"/>
+                    <TextBlock Text="One search. One action. Less portal friction." Foreground="#AFC0D4" FontSize="13" TextWrapping="Wrap" Margin="0,11,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Margin="0,34,0,0">
@@ -147,7 +147,7 @@ Add-Type -AssemblyName WindowsBase
                             <TextBlock Text="Security model" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                             <TextBlock Text="Delegated Graph auth only. No secrets, no stored tokens, no local DB." Foreground="#B9C8DA" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,12"/>
                             <Border Height="1" Background="#20344E" Margin="0,0,0,12"/>
-                            <TextBlock Text="v0.1 community build" Foreground="#B9C8DA" FontSize="12"/>
+                            <TextBlock Text="v0.25 community build" Foreground="#B9C8DA" FontSize="12"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -199,15 +199,19 @@ Add-Type -AssemblyName WindowsBase
                         <Border Width="74" Height="74" Background="#10203A" BorderBrush="#284D78" BorderThickness="1" CornerRadius="22" HorizontalAlignment="Center">
                             <TextBlock Text="--" Foreground="#7EA6FF" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="No device selected" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                        <TextBlock Text="No device selected" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,9,0,0"/>
                         <TextBlock Text="Enter a device name or UPN, then click Search." Foreground="#AFC0D4" FontSize="15" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- Device card -->
-            <Border x:Name="DeviceCard" Grid.Row="2" Style="{StaticResource Card}" Height="245" Margin="0,0,0,18" Visibility="Collapsed">
+            <Border x:Name="DeviceCard" Grid.Row="2" Style="{StaticResource Card}" Height="282" Margin="0,0,0,18" Visibility="Collapsed">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="170"/>
                         <ColumnDefinition Width="2*"/>
@@ -215,23 +219,35 @@ Add-Type -AssemblyName WindowsBase
                         <ColumnDefinition Width="2*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Width="118" Height="118" Background="#10203A" BorderBrush="#2B63A5" BorderThickness="1" CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <Grid Grid.Row="0" Grid.ColumnSpan="4" Height="34" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="DeviceCounterText" Grid.Column="0" Text="1 device found" Foreground="#AFC0D4" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="20,0,0,0">
+                            <Button x:Name="PreviousDeviceButton" Content="&#x2039;" Width="38" Height="30" Margin="0,0,8,0" Background="#14243A" Foreground="White" BorderBrush="#20344E" FontSize="20" IsEnabled="False" ToolTip="Previous device"/>
+                            <Button x:Name="NextDeviceButton" Content="&#x203A;" Width="38" Height="30" Background="#14243A" Foreground="White" BorderBrush="#20344E" FontSize="20" IsEnabled="False" ToolTip="Next device"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1" Grid.Column="0" Width="118" Height="118" Background="#10203A" BorderBrush="#2B63A5" BorderThickness="1" CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="PC" Foreground="#7EA6FF" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Windows" Foreground="#8EA2BB" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="DeviceIconText" Text="PC" Foreground="#7EA6FF" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="DevicePlatformText" Text="Windows" Foreground="#8EA2BB" FontSize="12" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,24,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock x:Name="DeviceNameText" Text="--" Foreground="White" FontSize="25" FontWeight="Bold" Margin="0,0,12,0"/>
                             <Border x:Name="ComplianceBadge" Background="#143926" CornerRadius="10" Padding="10,5" VerticalAlignment="Center">
                                 <TextBlock x:Name="ComplianceBadgeText" Text="Compliant" Foreground="#35E888" FontSize="13" FontWeight="SemiBold"/>
                             </Border>
                         </StackPanel>
-                        <TextBlock x:Name="OsText" Text="--" Foreground="#DDE7F3" FontSize="16" Margin="0,18,0,0"/>
-                        <TextBlock x:Name="ModelText" Text="--" Foreground="#AFC0D4" FontSize="14" Margin="0,12,0,0"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <TextBlock x:Name="OsText" Text="--" Foreground="#DDE7F3" FontSize="16" Margin="0,9,0,0"/>
+                        <TextBlock x:Name="ModelText" Text="--" Foreground="#AFC0D4" FontSize="14" Margin="0,9,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
                             <TextBlock Text="Tag:" Foreground="#AFC0D4" FontSize="14" Margin="0,3,8,0"/>
                             <Border Background="#12396B" CornerRadius="6" Padding="9,4">
                                 <TextBlock x:Name="TagText" Text="Managed" Foreground="#69A8FF" FontSize="13"/>
@@ -239,20 +255,20 @@ Add-Type -AssemblyName WindowsBase
                         </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <StackPanel Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,24,0">
                         <TextBlock Text="Primary User" Style="{StaticResource SmallLabel}"/>
-                        <TextBlock x:Name="UserText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,24"/>
+                        <TextBlock x:Name="UserText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,16"/>
                         <TextBlock Text="Operating System" Style="{StaticResource SmallLabel}"/>
-                        <TextBlock x:Name="OperatingSystemText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,24"/>
+                        <TextBlock x:Name="OperatingSystemText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,16"/>
                         <TextBlock Text="Last Sync" Style="{StaticResource SmallLabel}"/>
                         <TextBlock x:Name="LastSyncText" Text="--" Foreground="#35E888" FontSize="15"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                    <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Center">
                         <TextBlock Text="Ownership" Style="{StaticResource SmallLabel}"/>
-                        <TextBlock x:Name="OwnerText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,24"/>
+                        <TextBlock x:Name="OwnerText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,16"/>
                         <TextBlock Text="Serial Number" Style="{StaticResource SmallLabel}"/>
-                        <TextBlock x:Name="SerialText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,24"/>
+                        <TextBlock x:Name="SerialText" Text="--" Style="{StaticResource ValueText}" Margin="0,0,0,16"/>
                         <TextBlock Text="Model" Style="{StaticResource SmallLabel}"/>
                         <TextBlock x:Name="MgmtText" Text="--" Style="{StaticResource ValueText}"/>
                     </StackPanel>
@@ -283,7 +299,7 @@ Add-Type -AssemblyName WindowsBase
                             <TextBlock Text="Activity log" Foreground="White" FontSize="18" FontWeight="Bold"/>
                             <Border Background="#07111F" CornerRadius="8" Padding="14" Margin="0,14,0,0" Height="220">
                                 <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                    <TextBlock x:Name="LogText" Text="[UI] v0.1 loaded. Ready." Foreground="#DDE7F3" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="LogText" Text="[UI] v0.2 mobile device carousel loaded. Ready." Foreground="#DDE7F3" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
                                 </ScrollViewer>
                             </Border>
                         </StackPanel>
@@ -328,6 +344,8 @@ function Add-Log($Message) {
 
 $script:IsSignedIn = $false
 $script:CurrentDevice = $null
+$script:MatchedDevices = @()
+$script:CurrentDeviceIndex = -1
 $script:TenantId = $null
 $script:Scopes = @(
     "DeviceManagementManagedDevices.Read.All",
@@ -871,6 +889,137 @@ function Format-OSDisplay {
     return $family
 }
 
+function Select-ManagedDevice {
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$Devices,
+        [string]$SearchText
+    )
+
+    if ($Devices.Count -eq 1) { return $Devices[0] }
+
+    [xml]$selectionXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select Managed Device"
+        Width="780" Height="470"
+        MinWidth="680" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#07111F"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Select a managed device" Foreground="White" FontSize="25" FontWeight="Bold"/>
+        <TextBlock x:Name="SelectionSubText" Grid.Row="1" Foreground="#AFC0D4" FontSize="14" Margin="0,8,0,18"/>
+        <Border Grid.Row="2" Background="#101D2F" BorderBrush="#20344E" BorderThickness="1" CornerRadius="12" Padding="8">
+            <ListView x:Name="DeviceList" Background="Transparent" BorderThickness="0" SelectionMode="Single">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Device" Width="220" DisplayMemberBinding="{Binding deviceName}"/>
+                        <GridViewColumn Header="Platform" Width="110" DisplayMemberBinding="{Binding operatingSystem}"/>
+                        <GridViewColumn Header="Model" Width="180" DisplayMemberBinding="{Binding model}"/>
+                        <GridViewColumn Header="Compliance" Width="110" DisplayMemberBinding="{Binding complianceState}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Border>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,9,0,0">
+            <Button x:Name="CancelSelectionButton" Content="Cancel" Width="110" Height="40" Margin="0,0,10,0" Background="#14243A" Foreground="White" BorderBrush="#20344E"/>
+            <Button x:Name="UseDeviceButton" Content="Use selected device" Width="160" Height="40" Background="#2F6BFF" Foreground="White" BorderThickness="0" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+    $reader = New-Object System.Xml.XmlNodeReader $selectionXaml
+    $dialog = [Windows.Markup.XamlReader]::Load($reader)
+    if ($window) { $dialog.Owner = $window }
+
+    $list = $dialog.FindName("DeviceList")
+    $subText = $dialog.FindName("SelectionSubText")
+    $useButton = $dialog.FindName("UseDeviceButton")
+    $cancelButton = $dialog.FindName("CancelSelectionButton")
+
+    $subText.Text = ("{0} managed devices matched '{1}'." -f $Devices.Count, $SearchText)
+    foreach ($device in $Devices) { [void]$list.Items.Add($device) }
+    if ($list.Items.Count -gt 0) { $list.SelectedIndex = 0 }
+
+    $script:SelectedManagedDevice = $null
+    $useButton.Add_Click({
+        if ($list.SelectedItem) {
+            $script:SelectedManagedDevice = $list.SelectedItem
+            $dialog.DialogResult = $true
+            $dialog.Close()
+        }
+    })
+    $cancelButton.Add_Click({ $dialog.DialogResult = $false; $dialog.Close() })
+    $list.Add_MouseDoubleClick({
+        if ($list.SelectedItem) {
+            $script:SelectedManagedDevice = $list.SelectedItem
+            $dialog.DialogResult = $true
+            $dialog.Close()
+        }
+    })
+
+    [void]$dialog.ShowDialog()
+    return $script:SelectedManagedDevice
+}
+
+function Update-DeviceNavigation {
+    $counter = Find-Control "DeviceCounterText"
+    $previous = Find-Control "PreviousDeviceButton"
+    $next = Find-Control "NextDeviceButton"
+
+    $count = @($script:MatchedDevices).Count
+    if ($count -le 0 -or $script:CurrentDeviceIndex -lt 0) {
+        if ($counter) { $counter.Text = "No device selected" }
+        if ($previous) { $previous.IsEnabled = $false }
+        if ($next) { $next.IsEnabled = $false }
+        return
+    }
+
+    if ($counter) {
+        $counter.Text = ("Device {0} of {1}  -  use arrows to switch" -f ($script:CurrentDeviceIndex + 1), $count)
+    }
+    if ($previous) { $previous.IsEnabled = ($count -gt 1) }
+    if ($next) { $next.IsEnabled = ($count -gt 1) }
+}
+
+function Show-DeviceAtIndex {
+    param([int]$Index)
+
+    $count = @($script:MatchedDevices).Count
+    if ($count -le 0) { return }
+
+    if ($Index -lt 0) { $Index = $count - 1 }
+    if ($Index -ge $count) { $Index = 0 }
+
+    $script:CurrentDeviceIndex = $Index
+    Show-Device $script:MatchedDevices[$Index]
+    Update-DeviceNavigation
+}
+
+function Show-PreviousDevice {
+    Show-DeviceAtIndex ($script:CurrentDeviceIndex - 1)
+}
+
+function Show-NextDevice {
+    Show-DeviceAtIndex ($script:CurrentDeviceIndex + 1)
+}
+
 function Show-Device {
     param($Device)
 
@@ -883,6 +1032,14 @@ function Show-Device {
 
     Set-Text "DeviceNameText" (Coalesce $Device.deviceName "Unknown device")
     Set-Text "UserText" (Coalesce $Device.userPrincipalName "No primary user")
+
+    $platform = (Coalesce $Device.operatingSystem "Unknown").ToString()
+    switch -Regex ($platform) {
+        "(?i)android" { Set-Text "DeviceIconText" "MB"; Set-Text "DevicePlatformText" "Android" }
+        "(?i)ios|ipad" { Set-Text "DeviceIconText" "MB"; Set-Text "DevicePlatformText" "iOS/iPadOS" }
+        "(?i)mac" { Set-Text "DeviceIconText" "MC"; Set-Text "DevicePlatformText" "macOS" }
+        default { Set-Text "DeviceIconText" "PC"; Set-Text "DevicePlatformText" $platform }
+    }
 
     $osDisplay = Format-OSDisplay $Device
     Set-Text "OsText" $osDisplay
@@ -903,9 +1060,19 @@ function Show-Device {
     Set-Text "FooterText" ("Last updated: {0}" -f (Get-Date -Format "HH:mm:ss"))
     Set-ComplianceBadge (Coalesce $Device.complianceState "unknown")
 
-    foreach ($name in @("RemoteHelpButton","SyncButton","RestartButton","OpenIntuneButton","RefreshButton")) {
+    foreach ($name in @("SyncButton","OpenIntuneButton","RefreshButton")) {
         $b = Find-Control $name
         if ($b) { $b.IsEnabled = $true }
+    }
+
+    $isWindows = ($platform -match "(?i)^windows")
+    $remoteButton = Find-Control "RemoteHelpButton"
+    $restartButton = Find-Control "RestartButton"
+    if ($remoteButton) { $remoteButton.IsEnabled = $isWindows }
+    if ($restartButton) { $restartButton.IsEnabled = $isWindows }
+
+    if (-not $isWindows) {
+        Add-Log ("Mobile/non-Windows device selected: {0}. Remote Help and Restart are disabled in this version." -f $platform)
     }
 }
 
@@ -957,37 +1124,64 @@ function Search-Device {
 
         $select = "id,deviceName,userPrincipalName,operatingSystem,osVersion,complianceState,lastSyncDateTime,manufacturer,model,managedDeviceOwnerType,serialNumber,managementAgent,remoteAssistanceSessionUrl,deviceCategoryDisplayName"
         $escaped = Escape-ODataString $query
+        $matchedDevices = @()
 
-        $uris = @(
-            "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$filter=deviceName eq '$escaped'&`$select=$select",
-            "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$filter=userPrincipalName eq '$escaped'&`$select=$select",
-            "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$top=999&`$select=$select"
-        )
+        # Exact device name first. A device-name lookup normally resolves to one record.
+        $deviceResult = Invoke-MgGraphRequest `
+            -Method GET `
+            -Uri "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$filter=deviceName eq '$escaped'&`$select=$select" `
+            -ErrorAction Stop
 
-        $device = $null
-
-        foreach ($uri in $uris) {
-            $result = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
-            if ($result.value) {
-                if ($uri -like "*top=999*") {
-                    $device = $result.value | Where-Object {
-                        $_.deviceName -like "*$query*" -or $_.userPrincipalName -like "*$query*"
-                    } | Select-Object -First 1
-                } else {
-                    $device = $result.value | Select-Object -First 1
-                }
-            }
-            if ($device) { break }
+        if ($deviceResult.value) {
+            $matchedDevices = @($deviceResult.value)
         }
 
-        if (-not $device) {
+        # UPN lookup intentionally returns every managed device assigned to the user,
+        # including Windows, Android, iOS/iPadOS and macOS records.
+        if ($matchedDevices.Count -eq 0) {
+            $userResult = Invoke-MgGraphRequest `
+                -Method GET `
+                -Uri "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$filter=userPrincipalName eq '$escaped'&`$select=$select" `
+                -ErrorAction Stop
+
+            if ($userResult.value) {
+                $matchedDevices = @($userResult.value)
+            }
+        }
+
+        # Partial fallback for device names or UPNs.
+        if ($matchedDevices.Count -eq 0) {
+            $allResult = Invoke-MgGraphRequest `
+                -Method GET `
+                -Uri "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$top=999&`$select=$select" `
+                -ErrorAction Stop
+
+            if ($allResult.value) {
+                $matchedDevices = @($allResult.value | Where-Object {
+                    $_.deviceName -like "*$query*" -or $_.userPrincipalName -like "*$query*"
+                })
+            }
+        }
+
+        if ($matchedDevices.Count -eq 0) {
             Add-Log "No matching device found."
             [System.Windows.MessageBox]::Show("No matching Intune managed device found.", "Search result", "OK", "Information") | Out-Null
             return
         }
 
-        Show-Device $device
-        Add-Log "Device found: $($device.deviceName)"
+        $matchedDevices = @($matchedDevices | Sort-Object operatingSystem, deviceName)
+        Add-Log ("Found {0} matching managed device(s)." -f $matchedDevices.Count)
+
+        $script:MatchedDevices = @($matchedDevices)
+        $script:CurrentDeviceIndex = 0
+        Show-DeviceAtIndex 0
+
+        if ($script:MatchedDevices.Count -gt 1) {
+            Add-Log ("{0} devices loaded. Use the arrows on the device card to switch between them." -f $script:MatchedDevices.Count)
+        }
+        else {
+            Add-Log ("Device selected: {0} ({1})" -f $script:CurrentDevice.deviceName, $script:CurrentDevice.operatingSystem)
+        }
     }
     catch {
         Add-Log "Search failed: $($_.Exception.Message)"
@@ -999,7 +1193,6 @@ function Search-Device {
         ) | Out-Null
     }
 }
-
 
 function Sync-CurrentDevice {
     if (-not $script:CurrentDevice) { return }
@@ -1236,7 +1429,7 @@ function Start-RemoteHelpForCurrentDevice {
 
         Add-Log "Remote Help sessionKey/passcode received: $sessionKey"
 
-        # v0.1: wait for the target device action queue to show remoteHelpLaunch as done.
+        # v0.14: wait for the target device action queue to show remoteHelpLaunch as done.
         # The portal appears to wait for this device action before opening the helper-side Remote Help UI.
         Add-Log "Waiting for remoteHelpLaunch action to reach 'done' state on target device..."
 
@@ -1296,7 +1489,7 @@ function Start-RemoteHelpForCurrentDevice {
             Add-Log "remoteHelpLaunch did not reach done within timeout. Proceeding anyway, but target may not be ready."
         }
 
-        # v0.1: Correct Remote Help protocol captured from the Intune portal.
+        # v0.18: Correct Remote Help protocol captured from the Intune portal.
         # Important differences from earlier builds:
         #   - ms-remote-help has a hyphen between remote and help
         #   - autolaunch is followed directly by ?passcode=, no slash before the query string
@@ -1383,6 +1576,12 @@ if ($open) { $open.Add_Click({ Open-CurrentDeviceInIntune }) }
 
 $refresh = Find-Control "RefreshButton"
 if ($refresh) { $refresh.Add_Click({ Search-Device }) }
+
+$previousDevice = Find-Control "PreviousDeviceButton"
+if ($previousDevice) { $previousDevice.Add_Click({ Show-PreviousDevice }) }
+
+$nextDevice = Find-Control "NextDeviceButton"
+if ($nextDevice) { $nextDevice.Add_Click({ Show-NextDevice }) }
 
 $sessionActivityNav = Find-Control "SessionActivityNav"
 if ($sessionActivityNav) { $sessionActivityNav.Add_MouseLeftButtonUp({ Show-SessionActivityWindow }) }
