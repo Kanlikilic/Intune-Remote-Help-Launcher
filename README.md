@@ -87,7 +87,6 @@ Default location:
 
 - Added support for displaying multiple managed devices for the searched primary user
 - Added previous/next navigation between matching devices
-- Added support for Windows, Android, iOS and macOS devices
 - Improved device card layout
 - Improved user search experience
 
