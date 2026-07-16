@@ -1,4 +1,4 @@
-﻿# Intune Remote Help Launcher - v0.12 SDK test build
+# Intune Remote Help Launcher - v0.2.0
 # UI-first design with basic Microsoft Graph backend.
 # Windows PowerShell 5.1 compatible. Uses delegated device code authentication.
 
@@ -20,7 +20,7 @@ Add-Type -AssemblyName WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Intune Remote Help Launcher v0.15"
+        Title="Intune Remote Help Launcher v0.2.0"
         Width="1280" Height="780"
         MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
@@ -126,13 +126,6 @@ Add-Type -AssemblyName WindowsBase
                     <Border Background="#12213A" CornerRadius="12" Padding="16,14">
                         <TextBlock Text="Device Lookup" Foreground="White" FontWeight="SemiBold" FontSize="15"/>
                     </Border>
-                    <Border x:Name="SessionActivityNav" Background="Transparent" CornerRadius="10" Padding="16,10" Margin="0,14,0,0" Cursor="Hand">
-                        <StackPanel>
-                            <TextBlock Text="Session Activity" Foreground="#9BB1CA" FontSize="14"/>
-                            <TextBlock Text="View activity in app" Foreground="#64748B" FontSize="11" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Border>
-                    <Button x:Name="OpenLocalHistoryButton" Content="Open Local History" Style="{StaticResource SecondaryButton}" Padding="12,9" FontSize="12" Margin="0,8,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="3">
@@ -147,7 +140,7 @@ Add-Type -AssemblyName WindowsBase
                             <TextBlock Text="Security model" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                             <TextBlock Text="Delegated Graph auth only. No secrets, no stored tokens, no local DB." Foreground="#B9C8DA" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,12"/>
                             <Border Height="1" Background="#20344E" Margin="0,0,0,12"/>
-                            <TextBlock Text="v0.25 community build" Foreground="#B9C8DA" FontSize="12"/>
+                            <TextBlock Text="v0.2.0 community build" Foreground="#B9C8DA" FontSize="12"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -299,7 +292,7 @@ Add-Type -AssemblyName WindowsBase
                             <TextBlock Text="Activity log" Foreground="White" FontSize="18" FontWeight="Bold"/>
                             <Border Background="#07111F" CornerRadius="8" Padding="14" Margin="0,14,0,0" Height="220">
                                 <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                    <TextBlock x:Name="LogText" Text="[UI] v0.2 mobile device carousel loaded. Ready." Foreground="#DDE7F3" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="LogText" Text="[UI] Intune Remote Help Launcher v0.2.0 loaded. Ready." Foreground="#DDE7F3" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
                                 </ScrollViewer>
                             </Border>
                         </StackPanel>
@@ -349,267 +342,9 @@ $script:CurrentDeviceIndex = -1
 $script:TenantId = $null
 $script:Scopes = @(
     "DeviceManagementManagedDevices.Read.All",
-    "DeviceManagementManagedDevices.ReadWrite.All",
     "DeviceManagementManagedDevices.PrivilegedOperations.All"
 )
-$script:SessionHistoryPath = Join-Path $env:LOCALAPPDATA "IntuneRemoteHelpLauncher\session-history.jsonl"
 $script:SignedInAccount = $null
-
-function Ensure-AppDataFolder {
-    $folder = Split-Path $script:SessionHistoryPath -Parent
-    if (-not (Test-Path $folder)) {
-        New-Item -ItemType Directory -Path $folder -Force | Out-Null
-    }
-}
-
-
-function Format-Ownership {
-    param($Value)
-    $v = [string](Coalesce $Value "Unknown")
-    switch -Regex ($v) {
-        "(?i)^company$|^corporate$" { return "Corporate" }
-        "(?i)^personal$" { return "Personal" }
-        default { return $v }
-    }
-}
-
-
-function Format-DurationText {
-    param([timespan]$Duration)
-    if (-not $Duration) { return "Not tracked" }
-    if ($Duration.TotalSeconds -lt 60) { return ("{0}s" -f [int]$Duration.TotalSeconds) }
-    if ($Duration.TotalMinutes -lt 60) { return ("{0}m {1}s" -f [int]$Duration.TotalMinutes, $Duration.Seconds) }
-    return ("{0}h {1}m" -f [int]$Duration.TotalHours, $Duration.Minutes)
-}
-
-function Save-SessionHistory {
-    param(
-        [string]$SessionType,
-        [string]$SessionKey
-    )
-    try {
-        Ensure-AppDataFolder
-        $ctx = $null
-        try { $ctx = Get-MgContext } catch {}
-
-        # The Graph session type is only the initial Remote Help launch mode.
-        # The real helper choice, View Screen or Full Control, is selected later inside the Remote Help app,
-        # so the launcher should not claim it knows the final action.
-        $entryId = [guid]::NewGuid().ToString()
-        $entry = [pscustomobject]@{
-            id          = $entryId
-            started     = (Get-Date).ToString("s")
-            startedUtc  = (Get-Date).ToUniversalTime().ToString("o")
-            ended       = $null
-            helper      = $(if ($ctx -and $ctx.Account) { $ctx.Account } else { $script:SignedInAccount })
-            device      = $(if ($script:CurrentDevice) { $script:CurrentDevice.deviceName } else { $null })
-            primaryUser = $(if ($script:CurrentDevice) { $script:CurrentDevice.userPrincipalName } else { $null })
-            action      = "Remote Help"
-            duration    = "In progress"
-            sessionKey  = $SessionKey
-        }
-        ($entry | ConvertTo-Json -Compress) | Add-Content -Path $script:SessionHistoryPath -Encoding UTF8
-        Add-Log ("Session activity saved locally: {0}" -f $script:SessionHistoryPath)
-        return $entryId
-    }
-    catch {
-        Add-Log ("Session activity could not be saved: {0}" -f $_.Exception.Message)
-        return $null
-    }
-}
-
-function Update-SessionHistoryDuration {
-    param(
-        [string]$EntryId,
-        [timespan]$Duration
-    )
-    if ([string]::IsNullOrWhiteSpace($EntryId)) { return }
-
-    try {
-        Ensure-AppDataFolder
-        if (-not (Test-Path $script:SessionHistoryPath)) { return }
-
-        $updated = $false
-        $items = Get-Content $script:SessionHistoryPath -ErrorAction SilentlyContinue |
-            Where-Object { $_.Trim() -ne "" } |
-            ForEach-Object {
-                try { $_ | ConvertFrom-Json } catch { $null }
-            } |
-            Where-Object { $_ }
-
-        foreach ($item in $items) {
-            if ([string]$item.id -eq $EntryId) {
-                $item.ended = (Get-Date).ToString("s")
-                $item.duration = Format-DurationText $Duration
-                $updated = $true
-            }
-        }
-
-        if ($updated) {
-            $items | ForEach-Object { $_ | ConvertTo-Json -Compress } | Set-Content -Path $script:SessionHistoryPath -Encoding UTF8
-            Add-Log ("Session duration updated: {0}" -f (Format-DurationText $Duration))
-        }
-    }
-    catch {
-        Add-Log ("Session duration could not be updated: {0}" -f $_.Exception.Message)
-    }
-}
-
-function Start-RemoteHelpDurationMonitor {
-    param(
-        [string]$EntryId,
-        [datetime]$LaunchTime
-    )
-
-    if ([string]::IsNullOrWhiteSpace($EntryId)) { return }
-
-    $state = [pscustomobject]@{
-        EntryId = $EntryId
-        LaunchTime = $LaunchTime
-        ProcessId = $null
-        Attempts = 0
-    }
-
-    $timer = New-Object System.Windows.Threading.DispatcherTimer
-    $timer.Interval = [timespan]::FromSeconds(5)
-    $timer.Tag = $state
-
-    $timer.Add_Tick({
-        param($sender, $args)
-        $st = $sender.Tag
-        $st.Attempts++
-
-        try {
-            if (-not $st.ProcessId) {
-                $candidate = Get-Process -Name "RemoteHelp" -ErrorAction SilentlyContinue |
-                    Where-Object {
-                        try { $_.StartTime -ge $st.LaunchTime.AddSeconds(-10) } catch { $false }
-                    } |
-                    Sort-Object StartTime -Descending |
-                    Select-Object -First 1
-
-                if ($candidate) {
-                    $st.ProcessId = $candidate.Id
-                    Add-Log ("RemoteHelp.exe process detected for duration tracking. PID: {0}" -f $st.ProcessId)
-                    return
-                }
-
-                if ($st.Attempts -ge 12) {
-                    Add-Log "RemoteHelp.exe process was not detected for duration tracking. Leaving duration as In progress."
-                    $sender.Stop()
-                }
-                return
-            }
-
-            $running = Get-Process -Id $st.ProcessId -ErrorAction SilentlyContinue
-            if (-not $running) {
-                $duration = (Get-Date) - $st.LaunchTime
-                Update-SessionHistoryDuration -EntryId $st.EntryId -Duration $duration
-                $sender.Stop()
-            }
-        }
-        catch {
-            Add-Log ("Duration monitor error: {0}" -f $_.Exception.Message)
-            $sender.Stop()
-        }
-    })
-
-    $timer.Start()
-    Add-Log "Session duration tracking started. Duration will update when Remote Help is closed."
-}
-
-function Open-SessionHistoryFile {
-    try {
-        Ensure-AppDataFolder
-        if (Test-Path $script:SessionHistoryPath) {
-            Start-Process -FilePath $script:SessionHistoryPath
-            Add-Log "Opened local session history file."
-        }
-        else {
-            Start-Process -FilePath (Split-Path $script:SessionHistoryPath -Parent)
-            Add-Log "No session history yet. Opened local history folder."
-        }
-    }
-    catch {
-        Add-Log ("Could not open local history: {0}" -f $_.Exception.Message)
-    }
-}
-
-function Show-SessionActivityWindow {
-    try {
-        Ensure-AppDataFolder
-        $items = @()
-        if (Test-Path $script:SessionHistoryPath) {
-            $items = Get-Content $script:SessionHistoryPath -ErrorAction SilentlyContinue | Where-Object { $_.Trim() -ne "" } | ForEach-Object {
-                try { $_ | ConvertFrom-Json } catch { $null }
-            } | Where-Object { $_ } | Select-Object -Last 50
-        }
-
-        $activityWindow = New-Object System.Windows.Window
-        $activityWindow.Title = "Session Activity"
-        $activityWindow.Width = 900
-        $activityWindow.Height = 520
-        $activityWindow.WindowStartupLocation = "CenterOwner"
-        $activityWindow.Owner = $window
-        $activityWindow.Background = "#07111F"
-        $activityWindow.FontFamily = "Segoe UI"
-
-        $grid = New-Object System.Windows.Controls.Grid
-        $grid.Margin = "24"
-        $row1 = New-Object System.Windows.Controls.RowDefinition; $row1.Height = "Auto"
-        $row2 = New-Object System.Windows.Controls.RowDefinition; $row2.Height = "*"
-        $grid.RowDefinitions.Add($row1); $grid.RowDefinitions.Add($row2)
-
-        $header = New-Object System.Windows.Controls.TextBlock
-        $header.Text = "Session Activity"
-        $header.Foreground = "White"
-        $header.FontSize = 26
-        $header.FontWeight = "Bold"
-        $header.Margin = "0,0,0,18"
-        [System.Windows.Controls.Grid]::SetRow($header,0)
-        $grid.Children.Add($header) | Out-Null
-
-        $box = New-Object System.Windows.Controls.TextBox
-        $box.Background = "#0D1828"
-        $box.Foreground = "#DDE7F3"
-        $box.BorderBrush = "#20344E"
-        $box.FontFamily = "Consolas"
-        $box.FontSize = 12
-        $box.Padding = "14"
-        $box.IsReadOnly = $true
-        $box.AcceptsReturn = $true
-        $box.VerticalScrollBarVisibility = "Auto"
-        $box.HorizontalScrollBarVisibility = "Auto"
-
-        if ($items.Count -eq 0) {
-            $box.Text = "No local session activity yet.`r`n`r`nHistory file:`r`n$script:SessionHistoryPath"
-        }
-        else {
-            $lines = New-Object System.Collections.Generic.List[string]
-            $lines.Add(("{0,-19} {1,-28} {2,-28} {3,-16} {4}" -f "Started", "Device", "Primary user", "Action", "Duration"))
-            $lines.Add(("-" * 120))
-            foreach ($i in $items) {
-                $lines.Add(("{0,-19} {1,-28} {2,-28} {3,-16} {4}" -f `
-                    ([string]$i.started), `
-                    ([string]$i.device), `
-                    ([string]$i.primaryUser), `
-                    ([string]$i.action), `
-                    ([string]$i.duration)))
-            }
-            $lines.Add("")
-            $lines.Add("Local file: $script:SessionHistoryPath")
-            $box.Text = ($lines -join "`r`n")
-        }
-
-        [System.Windows.Controls.Grid]::SetRow($box,1)
-        $grid.Children.Add($box) | Out-Null
-        $activityWindow.Content = $grid
-        $activityWindow.ShowDialog() | Out-Null
-    }
-    catch {
-        Add-Log ("Could not show session activity: {0}" -f $_.Exception.Message)
-    }
-}
 
 function Escape-ODataString {
     param([string]$Value)
@@ -680,7 +415,7 @@ function Complete-GraphSignIn {
                 Set-Text "PermissionText" "Privileged device operations granted"
             }
             else {
-                Set-Text "PermissionText" "Read/write scopes granted"
+                Set-Text "PermissionText" "Managed device read access granted"
             }
             Add-Log "Signed in as $($ctx.Account)"
         } else {
@@ -1412,24 +1147,18 @@ function Start-RemoteHelpForCurrentDevice {
             if ($lastRemoteHelpError) { throw $lastRemoteHelpError }
             throw "Remote Help session creation failed. No response was returned."
         }
+        Add-Log "Remote Help session response received successfully."
 
-        try {
-            $sessionJson = $session | ConvertTo-Json -Depth 10 -Compress
-            Add-Log "Remote Help response: $sessionJson"
-        } catch {
-            Add-Log "Remote Help response received, but could not convert it to JSON."
-        }
-
-        $sessionKey = $session.sessionKey
+$sessionKey = $session.sessionKey
 
         if (-not $sessionKey) {
             Add-Log "Remote Help session was created but no sessionKey was returned."
             return
         }
 
-        Add-Log "Remote Help sessionKey/passcode received: $sessionKey"
+        Add-Log "Remote Help session credentials received successfully."
 
-        # v0.14: wait for the target device action queue to show remoteHelpLaunch as done.
+        # Wait for the target device action queue to show remoteHelpLaunch as done.
         # The portal appears to wait for this device action before opening the helper-side Remote Help UI.
         Add-Log "Waiting for remoteHelpLaunch action to reach 'done' state on target device..."
 
@@ -1489,21 +1218,16 @@ function Start-RemoteHelpForCurrentDevice {
             Add-Log "remoteHelpLaunch did not reach done within timeout. Proceeding anyway, but target may not be ready."
         }
 
-        # v0.18: Correct Remote Help protocol captured from the Intune portal.
+        # Remote Help protocol captured from the Intune portal.
         # Important differences from earlier builds:
         #   - ms-remote-help has a hyphen between remote and help
         #   - autolaunch is followed directly by ?passcode=, no slash before the query string
         $launchUri = "ms-remote-help://autolaunch?passcode=$sessionKey"
 
-        Add-Log "Launch URI: $launchUri"
-        Add-Log "Launching Remote Help using registered Windows protocol handler."
-        Add-Log "Command: Start-Process -FilePath `"$launchUri`""
+        Add-Log "Launching Remote Help using the registered Windows protocol handler."
 
         try {
-            $launchTime = Get-Date
             Start-Process -FilePath $launchUri -ErrorAction Stop
-            $historyId = Save-SessionHistory -SessionType "Remote Help" -SessionKey $sessionKey
-            Start-RemoteHelpDurationMonitor -EntryId $historyId -LaunchTime $launchTime
             Add-Log "Remote Help protocol launch command sent."
             return
         }
@@ -1522,12 +1246,8 @@ function Start-RemoteHelpForCurrentDevice {
             throw "RemoteHelp.exe was not found and protocol launch failed. Please verify Remote Help is installed."
         }
 
-        Add-Log "Falling back to RemoteHelp.exe direct launch with corrected URI."
-        Add-Log "Command: `"$remoteHelpExe`" `"$launchUri`""
-        $launchTime = Get-Date
+        Add-Log "Falling back to the Remote Help executable."
         Start-Process -FilePath $remoteHelpExe -ArgumentList @($launchUri) -ErrorAction Stop
-        $historyId = Save-SessionHistory -SessionType "Remote Help" -SessionKey $sessionKey
-        Start-RemoteHelpDurationMonitor -EntryId $historyId -LaunchTime $launchTime
         Add-Log "RemoteHelp.exe fallback launch command sent."
     }
     catch {
@@ -1582,12 +1302,6 @@ if ($previousDevice) { $previousDevice.Add_Click({ Show-PreviousDevice }) }
 
 $nextDevice = Find-Control "NextDeviceButton"
 if ($nextDevice) { $nextDevice.Add_Click({ Show-NextDevice }) }
-
-$sessionActivityNav = Find-Control "SessionActivityNav"
-if ($sessionActivityNav) { $sessionActivityNav.Add_MouseLeftButtonUp({ Show-SessionActivityWindow }) }
-
-$openLocalHistory = Find-Control "OpenLocalHistoryButton"
-if ($openLocalHistory) { $openLocalHistory.Add_Click({ Open-SessionHistoryFile }) }
 
 if ($DemoMode) {
     Set-ConnectionState "Demo mode"
