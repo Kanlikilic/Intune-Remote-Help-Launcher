@@ -22,7 +22,6 @@ Instead of navigating through multiple screens in the Intune admin center, simpl
 - Send Sync commands
 - Send Restart commands
 - Open the selected device directly in the Intune admin center
-- View locally stored Remote Help session history
 
 * * *
 
@@ -50,6 +49,18 @@ If the required Microsoft Graph PowerShell module is not installed, the tool aut
 
 * * *
 
+## Remote Help Requirements
+
+Microsoft Remote Help must be licensed and configured in the tenant.
+
+The Remote Help application must be installed on both the administrator device and the end-user device.
+
+The signed-in administrator must also have the required Intune RBAC permissions to view managed devices, perform device actions, and initiate Remote Help sessions.
+
+> Remote Help functionality in this tool uses Microsoft Graph beta endpoints. Microsoft Graph beta APIs are subject to change and may require future updates to the tool.
+
+* * *
+
 ## Getting Started
 
 Run the script:
@@ -62,18 +73,6 @@ If the Microsoft Graph Authentication module cannot be installed automatically, 
 
 ```powershell
 Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
-```
-
-* * *
-
-## Session History
-
-Remote Help sessions are stored locally and can also be viewed directly from within the application.
-
-Default location:
-
-```text
-%LOCALAPPDATA%\IntuneRemoteHelpLauncher\
 ```
 
 * * *
