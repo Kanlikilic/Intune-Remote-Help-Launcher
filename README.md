@@ -45,7 +45,6 @@ If the required Microsoft Graph PowerShell module is not installed, the tool aut
 | Permission |
 | ---------- |
 | DeviceManagementManagedDevices.Read.All |
-| DeviceManagementManagedDevices.ReadWrite.All |
 | DeviceManagementManagedDevices.PrivilegedOperations.All |
 | Directory.Read.All |
 
@@ -81,9 +80,9 @@ Default location:
 
 ## Version
 
-**Current Release:** v0.2.0
+**Current Release:** v0.2.1
 
-### What's New in v0.2.0
+### What's New in v0.2.1
 
 - Added support for displaying multiple managed devices for the searched primary user
 - Added previous/next navigation between matching devices
